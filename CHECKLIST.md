@@ -25,22 +25,22 @@ graph TD
 
 System składa się z 4 odizolowanych kontenerów w 2 sieciach, zarządzanych przez Docker Compose:
 
-- **Nginx (Reverse Proxy)**: Port wystawiony na `80`, przekierowuje ruch. W sieci `frontend_network`.
-- **Backend (FastAPI)**: Aplikacja Pythonowa, zbudowana przez wieloetapowy `Dockerfile`, działa jako użytkownik `student` (non-root). Łączy sieci front/back.
-- **PostgreSQL (Baza danych)**: Baza relacyjna, z Named Volume `postgres_data`. Nie wystawia portów na zewnątrz. W sieci `backend_network`.
-- **Redis (Cache/Komponent wspierający)**: Baza in-memory do zliczania dodanych notatek. W sieci `backend_network`.
+- **Nginx (Reverse Proxy)**: Port wystawiony na `80`, przekierowuje ruch. W sieci `frontend_network`
+- **Backend (FastAPI)**: Aplikacja Pythonowa, zbudowana przez wieloetapowy `Dockerfile`, działa jako użytkownik `student`. Łączy sieci frontend/backend
+- **PostgreSQL (Baza danych)**: Baza relacyjna, z Named Volume `postgres_data`. Nie wystawia portów na zewnątrz. W sieci `backend_network`
+- **Redis (Cache/Komponent wspierający)**: Baza in-memory do zliczania dodanych notatek. W sieci `backend_network`
 
 ## 2. Instrukcja Uruchomienia
 
-1. Skopiuj plik z hasłami (symulacja): `cp .env.example .env`
+1. Ustaw hasło DB_PASSWORD w pliku .env.example i zmień jego nazwę na .env
 2. Uruchom środowisko w tle:
    ```bash
    docker compose up -d --build
    ```
 
-## 3. Komendy Testowe (Kryteria Akceptacji)
+## 3. Komendy Testowe
 
-### A. Sprawdzenie mechanizmu Healthcheck (Wymóg API)
+Test odpowiedzi aplikacji
 
 ```bash
 curl.exe -X GET http://localhost/health
@@ -48,10 +48,10 @@ curl.exe -X POST -H "Content-Type: application/json" -d "{\"content\": \"Pierwsz
 curl.exe -X GET http://localhost/notes
 ```
 
-Oczekiwane wyniki:
+Oczekiwane wyniki (tylko przy pierwszym uruchomieniu):
 {"status":"OK"}
 {"id":1,"message":"Zapisano i policzono w cache"}
-{"redis_total_created":1,"postgres_notes":[{"id":1,"content":"Pierwsza notatka"}]}
+{"redis_session_created":1,"postgres_notes":[{"id":1,"content":"Pierwsza notatka"}]}
 
 Test Trwałości Danych
 

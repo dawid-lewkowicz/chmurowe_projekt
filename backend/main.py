@@ -62,4 +62,4 @@ def get_notes():
     count = r.get("notes_count") or 0
     
     notes_list = [{"id": row[0], "content": row[1]} for row in rows]
-    return {"redis_total_created": count, "postgres_notes": notes_list}
+    return {"redis_session_counter": count, "postgres_notes": notes_list}

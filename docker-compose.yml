@@ -1,0 +1,80 @@
+version: "3.8"
+
+networks: # tworzenie oddzielnych sieci dla Ngix i bazy danych
+  frontend_network:
+    driver: bridge # izolacja od innych sieci
+  backend_network:
+    driver: bridge
+
+# zapisywanie fizyczne na dysku, named volume
+volumes:
+  postgres_data:
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    # wyjście na świat zewnętrzny
+    ports:
+      - "80:80" #port na fizycznym komputerze : port wewnątrz kontenera
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # ścieżka do pliku :domyślnie miejsce konfiguracji Ngix :ro=Read Only
+    networks:
+      - frontend_network
+      # oczekiwanie na uruchomienie sie kontenera backend
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    # budujemy z własnego Dockerfile
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      - DATABASE_URL=postgresql://user_prod:${DB_PASSWORD}@db:5432/notes_db
+      - REDIS_HOST=cache
+    env_file:
+      - .env
+    networks:
+      - frontend_network
+      - backend_network
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  db:
+    image: postgres:15-alpine
+    container_name: db
+    environment:
+      POSTGRES_USER: user_prod
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: notes_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_prod -d notes_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 4
+
+  cache:
+    image: redis:7-alpine
+    container_name: cache
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"] # wysyłamy ping w terminal Redisa
+      interval: 10s
+      timeout: 5s
+      retries: 4

@@ -22,12 +22,24 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: my_notes_backend:v1
     container_name: backend
+    stop_grace_period: 15s
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${DB_PASSWORD}@db:5432/${POSTGRES_DB}
       - REDIS_HOST=cache
@@ -46,6 +58,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
 
   db:
     image: postgres:15-alpine
@@ -63,6 +85,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 768M
 
   cache:
     image: redis:7-alpine
@@ -70,7 +97,21 @@ services:
     networks:
       - backend_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"] # wysyłamy ping w terminal Redisa
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - backend_network
+    profiles:
+      - dev

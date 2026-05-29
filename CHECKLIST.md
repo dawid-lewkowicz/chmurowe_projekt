@@ -33,9 +33,14 @@ System składa się z 4 odizolowanych kontenerów w 2 sieciach, zarządzanych pr
 ## 2. Instrukcja Uruchomienia
 
 1. Ustaw wartości zmiennych środowiskowych w pliku .env.example i zmień jego nazwę na .env
-2. Uruchom środowisko w tle:
+2. Uruchom środowisko w tle po raz pierwszy:
    ```bash
    docker compose up -d --build
+   docker compose ps
+   ```
+3. Dodatkowo możemy uruchomić środowisko z odpowiednim profilem:
+   ```bash
+   docker compose --profile dev up -d
    ```
 
 ## 3. Komendy Testowe
@@ -43,10 +48,13 @@ System składa się z 4 odizolowanych kontenerów w 2 sieciach, zarządzanych pr
 Test odpowiedzi aplikacji
 
 ```bash
-curl.exe -X GET http://localhost/health
-curl.exe -X POST -H "Content-Type: application/json" -d "{\"content\": \"Pierwsza notatka\"}" http://localhost/notes
-curl.exe -X GET http://localhost/notes
+curl.exe -i -X GET http://localhost/health
+curl.exe -i -X POST -H "Content-Type: application/json" -d "{\"content\": \"Pierwsza notatka\"}" http://localhost/notes
+curl.exe -i -X GET http://localhost/notes
 ```
+
+Awaryjne komendy:
+Invoke-RestMethod -Uri "http://localhost/notes" -Method Post -ContentType "application/json" -Body '{"content": "Pierwsza notatka"}'
 
 Oczekiwane wyniki (tylko przy pierwszym uruchomieniu):
 {"status":"OK"}
@@ -57,6 +65,6 @@ Test Trwałości Danych
 
 ```bash
 docker compose down
-docker compose up -d
+docker compose --profile dev up -d
 curl.exe -X GET http://localhost/notes
 ```

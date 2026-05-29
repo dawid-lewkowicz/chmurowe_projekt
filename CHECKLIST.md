@@ -32,7 +32,7 @@ System składa się z 4 odizolowanych kontenerów w 2 sieciach, zarządzanych pr
 
 ## 2. Instrukcja Uruchomienia
 
-1. Ustaw hasło DB_PASSWORD w pliku .env.example i zmień jego nazwę na .env
+1. Ustaw wartości zmiennych środowiskowych w pliku .env.example i zmień jego nazwę na .env
 2. Uruchom środowisko w tle:
    ```bash
    docker compose up -d --build

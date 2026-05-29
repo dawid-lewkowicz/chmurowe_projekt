@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 import psycopg2
 import redis
@@ -9,11 +9,9 @@ app = FastAPI()
 DB_URL = os.getenv("DATABASE_URL")
 REDIS_HOST = os.getenv("REDIS_HOST", "cache")
 
-# FastAPI samo sprawdza czy to co ktoś wysłał to słownik i czy ma pole content a w nim jakiś string
 class Note(BaseModel):
     content: str
 
-# tworzenie tabeli notes przy starcie, o ile już nie istnieje
 @app.on_event("startup")
 def startup_event():
     connection = psycopg2.connect(DB_URL)
@@ -30,7 +28,6 @@ def startup_event():
 
 @app.get("/health")
 def health_check():
-    # produkcyjna wersja otwierałaby szybkie połączenie z bazą i wysyłała SELECT 1 + wysyłała ping do Redisa
     return {"status": "OK"}
 
 @app.post("/notes")
@@ -38,14 +35,13 @@ def add_note(note: Note):
     connection = psycopg2.connect(DB_URL)
     cursor = connection.cursor()
     cursor.execute("INSERT INTO notes (content) VALUES (%s) RETURNING id", (note.content,))
-    note_id = cursor.fetchone()[0] # RETURNING id daje nam możliwość pobrania id ze zwracanej krotki w ten prosty sposób
+    note_id = cursor.fetchone()[0]
     connection.commit()
     cursor.close()
     connection.close()
     
-    # inkrementacja licznika w Redis
-    r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True) # redis zapisuje i zwraca wszystko jako surowe bajty więc dekodujemy
-    r.incr("notes_count") # NIE używając get(), zwiększania o 1 i potem set(), zapobiegamy race condition
+    r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
+    r.incr("notes_count")
     
     return {"id": note_id, "message": "Zapisano i policzono w cache"}
 
